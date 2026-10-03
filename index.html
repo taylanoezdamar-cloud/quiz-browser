@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Browser</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #10131a;
+    color: white;
+}
+
+header {
+    background: #171b24;
+    padding: 18px;
+    text-align: center;
+    border-bottom: 1px solid #292f3d;
+}
+
+header h1 {
+    margin: 0;
+    color: #5b8cff;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
+
+.card {
+    background: #191e28;
+    padding: 25px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.25);
+}
+
+.hidden {
+    display: none;
+}
+
+button,
+select,
+input {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border-radius: 10px;
+    border: none;
+    font-size: 16px;
+}
+
+button {
+    background: #5b8cff;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.secondary {
+    background: #292f3d;
+}
+
+.danger {
+    background: #c0392b;
+}
+
+.answer {
+    background: #292f3d;
+    text-align: left;
+}
+
+.answer:hover {
+    background: #374052;
+}
+
+.answer.correct {
+    background: #229954;
+}
+
+.answer.wrong {
+    background: #c0392b;
+}
+
+.question-number {
+    color: #8fa7ff;
+    margin-bottom: 10px;
+}
+
+.progress {
+    height: 8px;
+    background: #292f3d;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #5b8cff;
+    width: 0%;
+    transition: width .3s;
+}
+
+.score {
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.player {
+    background: #232936;
+    padding: 14px;
+    border-radius: 10px;
+    margin-top: 8px;
+}
+
+.waiting {
+    text-align: center;
+    padding: 25px;
+}
+
+.waiting h2 {
+    color: #5b8cff;
+}
+
+.place {
+    padding: 18px;
+    margin-top: 10px;
+    background: #232936;
+    border-radius: 12px;
+    font-size: 19px;
+}
+
+.gold {
+    border: 2px solid #ffd700;
+}
+
+.silver {
+    border: 2px solid #c0c0c0;
+}
+
+.bronze {
+    border: 2px solid #cd7f32;
+}
+
+.small {
+    color: #aeb6c5;
+}
+
+.admin-entry {
+    margin-top: 12px;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    color: #aeb6c5;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🎯 Quiz Browser</h1>
+</header>
+
+<div class="container">
+
+<!-- STARTSEITE -->
+<div id="home" class="card">
+
+    <h2>Willkommen beim Quiz Browser!</h2>
+
+    <button onclick="showCreateLobby()">
+        🎮 Lobby erstellen
+    </button>
+
+    <button class="secondary" onclick="showJoinLobby()">
+        🔗 Lobby beitreten
+    </button>
+
+    <button class="secondary" onclick="showLeaderboard()">
+        🏆 Bestenliste
+    </button>
+
+    <button class="secondary" onclick="showAdminLogin()">
+        🔐 Admin
+    </button>
+
+</div>
+
+
+<!-- LOBBY ERSTELLEN -->
+<div id="createLobby" class="card hidden">
+
+    <h2>🎮 Lobby erstellen</h2>
+
+    <input
+        id="hostName"
+        placeholder="Dein Name"
+        maxlength="30"
+    >
+
+    <label>Thema</label>
+
+    <select id="createTopic">
+        <option value="allgemein">🌎 Allgemeinwissen</option>
+        <option value="gaming">🎮 Gaming</option>
+        <option value="sport">🏆 Sport</option>
+        <option value="fussball">⚽ Fußball</option>
+        <option value="geschichte">📜 Geschichte</option>
+        <option value="geografie">🌍 Geografie</option>
+        <option value="wissenschaft">🔬 Wissenschaft</option>
+        <option value="filme">🎬 Filme & Serien</option>
+        <option value="musik">🎵 Musik</option>
+        <option value="technik">💻 Technik</option>
+    </select>
+
+    <label>Anzahl Fragen</label>
+
+    <select id="questionAmount">
+        <option value="5">5 Fragen</option>
+        <option value="10">10 Fragen</option>
+        <option value="15">15 Fragen</option>
+        <option value="20">20 Fragen</option>
+    </select>
+
+    <button onclick="createLobby()">
+        🎮 Lobby erstellen
+    </button>
+
+    <button class="secondary" onclick="showHome()">
+        Zurück
+    </button>
+
+</div>
+
+
+<!-- LOBBY -->
+<div id="lobby" class="card hidden">
+
+    <h2>🎮 Lobby</h2>
+
+    <p>
+        Lobby-Code:
+        <strong id="lobbyCode"></strong>
+    </p>
+
+    <p class="small">
+        Teile diesen Code mit deinen Freunden.
+    </p>
+
+    <h3>👥 Spieler</h3>
+
+    <div id="players"></div>
+
+    <button onclick="addDemoPlayer()">
+        👤 Testspieler hinzufügen
+    </button>
+
+    <button onclick="startLobbyQuiz()">
+        🚀 Quiz starten
+    </button>
+
+    <button class="secondary" onclick="showHome()">
+        Lobby verlassen
+    </button>
+
+</div>
+
+
+<!-- LOBBY BEITRETEN -->
+<div id="joinLobby" class="card hidden">
+
+    <h2>🔗 Lobby beitreten</h2>
+
+    <input
+        id="joinName"
+        placeholder="Dein Name"
+        maxlength="30"
+    >
+
+    <input
+        id="joinCode"
+        placeholder="Lobby-Code"
+        maxlength="5"
+    >
+
+    <button onclick="joinLobby()">
+        Beitreten
+    </button>
+
+    <button class="secondary" onclick="showHome()">
+        Zurück
+    </button>
+
+</div>
+
+
+<!-- QUIZ -->
+<div id="quiz" class="card hidden">
+
+    <div
+        class="question-number"
+        id="questionNumber">
+    </div>
+
+    <div class="progress">
+        <div
+            class="progress-bar"
+            id="progressBar">
+        </div>
+    </div>
+
+    <h2 id="questionText"></h2>
+
+    <div id="answers"></div>
+
+    <div class="score">
+        Punkte:
+        <span id="score">0</span>
+    </div>
+
+</div>
+
+
+<!-- WARTEN -->
+<div id="waiting" class="card hidden waiting">
+
+    <h2>⏳ Du bist fertig!</h2>
+
+    <p>
+        Du hast alle Fragen beantwortet.
+    </p>
+
+    <p>
+        Wir warten auf die anderen Spieler...
+    </p>
+
+    <h3 id="waitingPlayers"></h3>
+
+</div>
+
+
+<!-- ERGEBNIS -->
+<div id="resultScreen" class="card hidden">
+
+    <h2>🏆 Endergebnis</h2>
+
+    <p class="small">
+        Alle Spieler haben das Quiz beendet.
+    </p>
+
+    <div id="finalResults"></div>
+
+    <button onclick="showHome()">
+        🏠 Startseite
+    </button>
+
+    <button class="secondary" onclick="showLeaderboard()">
+        🏆 Bestenliste
+    </button>
+
+</div>
+
+
+<!-- BESTENLISTE -->
+<div id="leaderboard" class="card hidden">
+
+    <h2>🏆 Bestenliste</h2>
+
+    <div id="leaderboardList"></div>
+
+    <button class="secondary" onclick="showHome()">
+        Zurück
+    </button>
+
+</div>
+
+
+<!-- ADMIN LOGIN -->
+<div id="adminLogin" class="card hidden">
+
+    <h2>🔐 Admin Login</h2>
+
+    <p class="small">
+        Dieser Bereich ist nur für den Ersteller.
+    </p>
+
+    <input
+        id="adminPassword"
+        type="password"
+        placeholder="Admin-Passwort"
+    >
+
+    <button onclick="adminLogin()">
+        🔐 Anmelden
+    </button>
+
+    <button class="secondary" onclick="showHome()">
+        Zurück
+    </button>
+
+</div>
+
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="card hidden">
+
+    <h2>🛠️ Admin-Bereich</h2>
+
+    <p class="small">
+        Hier kannst du die Bestenliste verwalten.
+    </p>
+
+    <button class="danger" onclick="resetLeaderboard()">
+        🗑️ Bestenliste komplett zurücksetzen
+    </button>
+
+    <h3>Gespeicherte Ergebnisse</h3>
+
+    <div id="adminLeaderboardList"></div>
+
+    <button class="secondary" onclick="adminLogout()">
+        🚪 Abmelden
+    </button>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   FRAGEN
+===================================================== */
+
+const questionDatabase = {
+
+allgemein: [
+
+{q:"Welches chemische Element hat das Symbol Au?",a:["Silber","Gold","Kupfer","Eisen"],c:1},
+{q:"Wie viele Nullen hat eine Milliarde?",a:["6","8","9","10"],c:2},
+{q:"Welches Land hat die Hauptstadt Canberra?",a:["Australien","Kanada","Neuseeland","Südafrika"],c:0},
+{q:"Wie heißt die größte Wüste der Erde nach Fläche?",a:["Sahara","Antarktische Wüste","Gobi","Kalahari"],c:1},
+{q:"Wie viele Seiten hat ein regelmäßiges Sechseck?",a:["5","6","7","8"],c:1},
+{q:"Welche Einheit wird für elektrische Stromstärke verwendet?",a:["Volt","Watt","Ampere","Ohm"],c:2},
+{q:"Welches Land besitzt die längste Küstenlinie der Welt?",a:["Russland","Kanada","USA","Australien"],c:1},
+{q:"Welche Zahl ist eine Primzahl?",a:["21","27","29","33"],c:2},
+{q:"Wie viele Grad hat ein rechter Winkel?",a:["45","90","180","360"],c:1},
+{q:"Welches Organ pumpt Blut durch den Körper?",a:["Lunge","Herz","Leber","Niere"],c:1},
+{q:"Welcher Planet besitzt besonders auffällige Ringe?",a:["Mars","Saturn","Merkur","Venus"],c:1},
+{q:"Wie viele Kontinente werden im häufig verwendeten Modell unterschieden?",a:["5","6","7","8"],c:2},
+{q:"Welche Sprache hat weltweit die meisten Muttersprachler?",a:["Englisch","Spanisch","Mandarin-Chinesisch","Deutsch"],c:2},
+{q:"Was ist die Quadratwurzel aus 144?",a:["10","11","12","14"],c:2},
+{q:"Wie viele Zähne hat ein erwachsener Mensch normalerweise inklusive Weisheitszähnen?",a:["28","30","32","36"],c:2},
+{q:"Welches Metall ist bei Raumtemperatur flüssig?",a:["Eisen","Quecksilber","Aluminium","Kupfer"],c:1},
+{q:"Welches Meer ist zwischen Europa und Afrika?",a:["Nordsee","Mittelmeer","Ostsee","Karibisches Meer"],c:1},
+{q:"Wie viele Sekunden hat eine Stunde?",a:["600","1800","3600","7200"],c:2},
+{q:"Welche Farbe entsteht aus Rot und Blau?",a:["Grün","Orange","Violett","Gelb"],c:2},
+{q:"Welcher Planet ist der Sonne am nächsten?",a:["Venus","Merkur","Mars","Erde"],c:1}
+
+],
+
+gaming: [
+
+{q:"Wie heißt die Dimension mit dem Enderdrachen in Minecraft?",a:["Nether","Ende","Aether","Overworld"],c:1},
+{q:"Welcher Charakter gehört zu Nintendo?",a:["Link","Kratos","Master Chief","Geralt"],c:0},
+{q:"Welche Ressource benötigt man in Minecraft für eine Diamant-Spitzhacke?",a:["Gold","Diamanten","Eisen","Smaragd"],c:1},
+{q:"Wie heißt der Bösewicht in der Zelda-Reihe häufig?",a:["Ganondorf","Bowser","Wario","Ridley"],c:0},
+{q:"Welche Konsole gehört zu Microsoft?",a:["Switch","Xbox","PlayStation","Steam Deck"],c:1},
+{q:"Was bedeutet NPC?",a:["Non-Player Character","New Player Control","Next Personal Character","Network Player Console"],c:0},
+{q:"Welche Firma entwickelte die PlayStation?",a:["Sony","Microsoft","Nintendo","Valve"],c:0},
+{q:"Welche Figur ist das Maskottchen von Sega?",a:["Sonic","Mario","Link","Crash"],c:0},
+{q:"Wie heißt die Hauptfigur aus God of War?",a:["Kratos","Atreus","Geralt","Ezio"],c:0},
+{q:"Welche Spielereihe verwendet häufig Pokébälle?",a:["Pokémon","Final Fantasy","Halo","Minecraft"],c:0},
+{q:"Was bezeichnet FPS häufig?",a:["Frames per Second","Fast Player System","First Play Server","Frame Player Score"],c:0},
+{q:"Welche Plattform gehört zu Valve?",a:["Steam","Origin","Xbox Live","PSN"],c:0},
+{q:"Wie heißt Marios Bruder?",a:["Luigi","Waluigi","Toad","Yoshi"],c:0},
+{q:"Welches Spiel ist für Creeper bekannt?",a:["Minecraft","Fortnite","FIFA","Valorant"],c:0},
+{q:"Welche Figur gehört zu Overwatch?",a:["Tracer","Sonic","Link","Pikachu"],c:0},
+{q:"Was ist ein Battle Royale?",a:["Ein Spielmodus, bei dem Spieler gegeneinander kämpfen und der letzte Überlebende gewinnt","Ein Rennmodus","Ein Storymodus","Ein Puzzle"],c:0},
+{q:"Welche Firma entwickelte Fortnite?",a:["Epic Games","Valve","Nintendo","Mojang"],c:0},
+{q:"Wie heißt der blaue Igel aus Sega-Spielen?",a:["Sonic","Shadow","Tails","Knuckles"],c:0},
+{q:"Welche Spielereihe spielt in der Welt von Tamriel?",a:["The Elder Scrolls","Pokémon","Halo","FIFA"],c:0},
+{q:"Welche Figur ist der Protagonist von The Witcher?",a:["Geralt von Riva","Arthur Morgan","Ezio Auditore","Nathan Drake"],c:0}
+
+],
+
+sport: [
+
+{q:"Wie lang ist ein Marathon exakt?",a:["40,195 km","41,195 km","42,195 km","43,195 km"],c:2},
+{q:"Wie viele Spieler stehen beim Volleyball pro Team auf dem Feld?",a:["5","6","7","8"],c:1},
+{q:"Wie viele Punkte gibt ein erfolgreicher Freiwurf im Basketball?",a:["1","2","3","4"],c:0},
+{q:"Wie nennt man drei Tore eines Spielers in einem Spiel?",a:["Triple","Hattrick","Hatshot","Dreier"],c:1},
+{q:"Welche Sportart verwendet einen Puck?",a:["Eishockey","Tennis","Rugby","Golf"],c:0},
+{q:"Wie viele Ringe hat das olympische Symbol?",a:["4","5","6","7"],c:1},
+{q:"Welche Distanz beträgt ein Halbmarathon?",a:["20,0975 km","21,0975 km","22,0975 km","23,0975 km"],c:1},
+{q:"Welche Sportart nutzt ein Netz und einen Federball?",a:["Badminton","Tennis","Volleyball","Squash"],c:0},
+{q:"Wie nennt man den Start eines Rennens?",a:["Anpfiff","Startsignal","Einwurf","Aufschlag"],c:1},
+{q:"Welche Sportart wird auf einem Velodrom betrieben?",a:["Radsport","Schwimmen","Boxen","Ringen"],c:0},
+{q:"Wie viele Bahnen hat ein Standard-Olympia-Schwimmbecken normalerweise?",a:["6","8","10","12"],c:1},
+{q:"Was ist ein Grand Slam im Tennis?",a:["Eines der vier großen Turniere","Ein Schlag","Ein Aufschlag","Eine Spielpause"],c:0},
+{q:"Welche Sportart verwendet einen Speer?",a:["Leichtathletik","Tennis","Basketball","Hockey"],c:0},
+{q:"Wie viele Spieler hat ein Basketballteam gleichzeitig auf dem Feld?",a:["4","5","6","7"],c:1},
+{q:"Welche Sportart hat die Disziplin 'Bodenturnen'?",a:["Turnen","Fechten","Rudern","Skispringen"],c:0},
+{q:"Was bedeutet KO im Boxen?",a:["Knockout","Kick Out","Keep On","Knock Over"],c:0},
+{q:"Welche Sportart nutzt einen Degen?",a:["Fechten","Golf","Rugby","Judo"],c:0},
+{q:"Wie viele Punkte ist ein Touchdown im American Football wert?",a:["3","6","7","8"],c:1},
+{q:"Welche Sportart wird auf einer Formel-1-Rennstrecke betrieben?",a:["Motorsport","Radsport","Leichtathletik","Rugby"],c:0},
+{q:"Wie nennt man den Bereich beim Fußball, in dem der Torwart den Ball mit der Hand spielen darf?",a:["Strafraum","Mittelkreis","Eckbereich","Technikzone"],c:0}
+
+],
+
+fussball: [
+
+{q:"Wie viele Minuten dauert eine normale Halbzeit?",a:["30","40","45","50"],c:2},
+{q:"Wie viele Spieler stehen pro Team normalerweise auf dem Feld?",a:["9","10","11","12"],c:2},
+{q:"Was passiert bei einer roten Karte?",a:["Verwarnung","Platzverweis","Freistoß für den Spieler","Tor"],c:1},
+{q:"Wie weit ist der Elfmeterpunkt vom Tor entfernt?",a:["9 Meter","10 Meter","11 Meter","12 Meter"],c:2},
+{q:"Was bedeutet Abseits grundsätzlich?",a:["Eine Regel zur Position eines angreifenden Spielers","Ein Handspiel","Ein Eckball","Ein Einwurf"],c:0},
+{q:"Welche Position trägt normalerweise die Nummer 1?",a:["Torwart","Stürmer","Kapitän","Trainer"],c:0},
+{q:"Wie nennt man drei Tore eines Spielers?",a:["Hattrick","Triple Kick","Dreiertor","Goal Run"],c:0},
+{q:"Was ist ein Volley?",a:["Direkter Schuss aus der Luft","Ein Einwurf","Ein Kopfball","Ein Eckball"],c:0},
+{q:"Was ist ein Freistoß?",a:["Ein ruhender Ball nach einem Regelverstoß","Ein Einwurf","Ein Tor","Ein Wechsel"],c:0},
+{q:"Was ist ein Eigentor?",a:["Tor ins eigene Tor","Tor aus einem Elfmeter","Tor per Kopf","Tor nach einem Freistoß"],c:0},
+{q:"Welche Linie begrenzt das Spielfeld an den Seiten?",a:["Torlinie","Seitenlinie","Mittellinie","Strafraumlinie"],c:1},
+{q:"Wie heißt die Linie vor dem Tor?",a:["Torlinie","Seitenlinie","Mittellinie","Außenlinie"],c:0},
+{q:"Was ist ein Eckstoß?",a:["Eckball","Einwurf","Elfmeter","Anstoß"],c:0},
+{q:"Wer entscheidet während des Spiels über Regelverstöße?",a:["Schiedsrichter","Trainer","Kapitän","Stürmer"],c:0},
+{q:"Wie nennt man den Mittelkreis?",a:["Center Circle","Goal Circle","Penalty Circle","Kick Circle"],c:0},
+{q:"Was ist ein Doppelpass?",a:["Zwei Spieler spielen sich den Ball direkt zurück","Zwei Tore","Zwei Fouls","Zwei Elfmeter"],c:0},
+{q:"Welche Karte kann nach zwei gelben Karten folgen?",a:["Rote Karte","Grüne Karte","Weiße Karte","Keine Karte"],c:0},
+{q:"Wie nennt man einen Pass in die Tiefe?",a:["Steilpass","Rückpass","Querpass","Abstoß"],c:0},
+{q:"Was ist ein Abstoß?",a:["Ein Wiederanstoß vom Torraum durch das verteidigende Team","Ein Einwurf","Ein Eckball","Ein Elfmeter"],c:0},
+{q:"Was bedeutet VAR?",a:["Video Assistant Referee","Virtual Attack Replay","Video Action Rule","Verified Assistant Referee"],c:0}
+
+],
+
+geschichte: [
+
+{q:"In welchem Jahr fiel die Berliner Mauer?",a:["1979","1989","1991","1999"],c:1},
+{q:"Wann begann der Zweite Weltkrieg in Europa?",a:["1937","1938","1939","1941"],c:2},
+{q:"Wann endete der Zweite Weltkrieg in Europa?",a:["1943","1944","1945","1946"],c:2},
+{q:"Welche Stadt wurde durch den Vesuvausbruch im Jahr 79 n. Chr. verschüttet?",a:["Pompeji","Rom","Athen","Sparta"],c:0},
+{q:"Wer war Napoleon Bonaparte?",a:["Französischer Kaiser und Militärführer","Britischer König","Römischer Kaiser","Griechischer Philosoph"],c:0},
+{q:"Wer entwickelte den Buchdruck mit beweglichen Lettern in Europa maßgeblich?",a:["Johannes Gutenberg","Isaac Newton","Galileo Galilei","Leonardo da Vinci"],c:0},
+{q:"Welche Zivilisation errichtete Machu Picchu?",a:["Inka","Römer","Azteken","Ägypter"],c:0},
+{q:"Wo entstanden die antiken Olympischen Spiele?",a:["Griechenland","Rom","Ägypten","Persien"],c:0},
+{q:"Welche Stadt war das Zentrum des Römischen Reiches?",a:["Rom","Paris","London","Madrid"],c:0},
+{q:"Was war die Französische Revolution?",a:["Ein politischer und gesellschaftlicher Umbruch","Ein Krieg zwischen Rom und Griechenland","Eine Naturkatastrophe","Eine Handelsroute"],c:0},
+{q:"Wann wurde die deutsche Wiedervereinigung vollzogen?",a:["1989","1990","1991","1992"],c:1},
+{q:"Welche Mauer teilte Berlin?",a:["Berliner Mauer","Hadrianswall","Chinesische Mauer","Römische Mauer"],c:0},
+{q:"Welche antike Kultur entwickelte die Demokratie in Athen?",a:["Griechen","Römer","Perser","Ägypter"],c:0},
+{q:"Wer war Julius Caesar?",a:["Römischer Staatsmann und Feldherr","Griechischer König","Französischer Kaiser","Wikingerführer"],c:0},
+{q:"Was war das Mittelalter?",a:["Eine historische Epoche","Ein Staat","Ein Krieg","Eine Religion"],c:0},
+{q:"Welche Sprache war im Römischen Reich besonders wichtig?",a:["Latein","Deutsch","Englisch","Französisch"],c:0},
+{q:"Welche Hochkultur lebte im Gebiet des heutigen Mexiko?",a:["Azteken","Römer","Wikinger","Inka"],c:0},
+{q:"Welche Hochkultur baute große Pyramiden in Ägypten?",a:["Altes Ägypten","Römer","Maya","Wikinger"],c:0},
+{q:"Was war die DDR?",a:["Deutscher Staat von 1949 bis 1990","Ein Teil Frankreichs","Ein Kaiserreich","Eine Stadt"],c:0},
+{q:"Welche Stadt war Hauptstadt der BRD bis 1990?",a:["Bonn","Berlin","Frankfurt","Hamburg"],c:0}
+
+],
+
+geografie: [
+
+{q:"Was ist die Hauptstadt von Kanada?",a:["Toronto","Vancouver","Ottawa","Montreal"],c:2},
+{q:"Was ist die Hauptstadt von Australien?",a:["Sydney","Melbourne","Canberra","Perth"],c:2},
+{q:"Was ist die Hauptstadt von Brasilien?",a:["Rio de Janeiro","São Paulo","Brasília","Salvador"],c:2},
+{q:"Welcher ist der größte Ozean?",a:["Atlantik","Pazifik","Indischer Ozean","Arktischer Ozean"],c:1},
+{q:"Welcher Berg ist der höchste über dem Meeresspiegel?",a:["K2","Mount Everest","Mont Blanc","Denali"],c:1},
+{q:"Welcher Fluss fließt durch Wien?",a:["Rhein","Donau","Elbe","Seine"],c:1},
+{q:"Welcher Fluss fließt durch London?",a:["Themse","Donau","Rhein","Elbe"],c:0},
+{q:"Welche Wüste liegt größtenteils in Nordafrika?",a:["Sahara","Gobi","Atacama","Kalahari"],c:0},
+{q:"Welches Land ist flächenmäßig das größte?",a:["Kanada","China","Russland","USA"],c:2},
+{q:"Welcher Kontinent ist flächenmäßig der größte?",a:["Afrika","Asien","Europa","Nordamerika"],c:1},
+{q:"Welches Land hat die Hauptstadt Bern?",a:["Schweiz","Österreich","Belgien","Niederlande"],c:0},
+{q:"Welche Stadt ist die Hauptstadt von Norwegen?",a:["Oslo","Stockholm","Helsinki","Kopenhagen"],c:0},
+{q:"Welche Stadt ist die Hauptstadt von Schweden?",a:["Oslo","Stockholm","Helsinki","Reykjavik"],c:1},
+{q:"Welche Stadt ist die Hauptstadt von Finnland?",a:["Helsinki","Oslo","Stockholm","Tallinn"],c:0},
+{q:"Welches Land hat die Form eines Stiefels?",a:["Italien","Spanien","Portugal","Griechenland"],c:0},
+{q:"Welches Meer liegt zwischen Europa und Afrika?",a:["Mittelmeer","Nordsee","Ostsee","Schwarzes Meer"],c:0},
+{q:"Auf welchem Kontinent liegt die Sahara?",a:["Afrika","Asien","Europa","Australien"],c:0},
+{q:"Welches Land grenzt an Deutschland?",a:["Portugal","Polen","Spanien","Irland"],c:1},
+{q:"Welche Hauptstadt liegt an der Seine?",a:["Paris","Rom","Madrid","Lissabon"],c:0},
+{q:"Welche Hauptstadt liegt an der Themse?",a:["London","Dublin","Paris","Berlin"],c:0}
+
+],
+
+wissenschaft: [
+
+{q:"Welche Einheit misst elektrische Spannung?",a:["Volt","Ampere","Ohm","Watt"],c:0},
+{q:"Welche Einheit misst Stromstärke?",a:["Volt","Ampere","Watt","Ohm"],c:1},
+{q:"Wie lautet die chemische Formel von Wasser?",a:["CO2","H2O","O2","NaCl"],c:1},
+{q:"Welche Teilchen sind negativ geladen?",a:["Protonen","Elektronen","Neutronen","Atomkerne"],c:1},
+{q:"Welche Teilchen sind positiv geladen?",a:["Elektronen","Protonen","Neutronen","Moleküle"],c:1},
+{q:"Welche Teilchen sind elektrisch neutral?",a:["Elektronen","Protonen","Neutronen","Ionen"],c:2},
+{q:"Was ist die Gravitation?",a:["Anziehung zwischen Massen","Eine elektrische Ladung","Eine Lichtart","Eine chemische Reaktion"],c:0},
+{q:"Welcher Planet ist der größte?",a:["Saturn","Jupiter","Neptun","Uranus"],c:1},
+{q:"Welcher Planet ist der Sonne am nächsten?",a:["Venus","Merkur","Erde","Mars"],c:1},
+{q:"Welcher Planet wird als Roter Planet bezeichnet?",a:["Mars","Venus","Jupiter","Merkur"],c:0},
+{q:"Wie viele Knochen hat ein erwachsener Mensch ungefähr?",a:["106","206","306","406"],c:1},
+{q:"Welches Organ pumpt Blut?",a:["Lunge","Herz","Leber","Niere"],c:1},
+{q:"Was ist Photosynthese?",a:["Prozess, bei dem Pflanzen Lichtenergie nutzen","Zellteilung","Verdauung","Atmung von Tieren"],c:0},
+{q:"Bei welcher Temperatur gefriert Wasser unter Normaldruck?",a:["0 °C","10 °C","50 °C","100 °C"],c:0},
+{q:"Bei welcher Temperatur siedet Wasser unter Normaldruck?",a:["50 °C","75 °C","100 °C","150 °C"],c:2},
+{q:"Was ist H2O?",a:["Wasser","Sauerstoff","Wasserstoff","Salz"],c:0},
+{q:"Welche Wissenschaft beschäftigt sich mit Himmelskörpern?",a:["Astronomie","Biologie","Geologie","Soziologie"],c:0},
+{q:"Welche Wissenschaft beschäftigt sich mit Lebewesen?",a:["Biologie","Physik","Astronomie","Geologie"],c:0},
+{q:"Was ist ein Atom?",a:["Ein grundlegender Baustein der Materie","Ein Planet","Ein Organ","Ein Virus"],c:0},
+{q:"Wie nennt man den Mittelpunkt eines Atoms?",a:["Atomkern","Elektronenhülle","Molekül","Ion"],c:0}
+
+],
+
+filme: [
+
+{q:"Wie heißt Harry Potters Eule?",a:["Hedwig","Dobby","Fawkes","Nagini"],c:0},
+{q:"Wie heißt Batmans Heimatstadt?",a:["Gotham City","Metropolis","Star City","Central City"],c:0},
+{q:"Wer ist Peter Parker?",a:["Spider-Man","Batman","Superman","Iron Man"],c:0},
+{q:"Wie heißt der grüne Oger aus Shrek?",a:["Shrek","Hulk","Fiona","Donkey"],c:0},
+{q:"Wie heißt der Esel aus Shrek?",a:["Donkey","Olaf","Timon","Pumbaa"],c:0},
+{q:"Wie heißt Simbas Vater?",a:["Mufasa","Scar","Timon","Rafiki"],c:0},
+{q:"Wer ist der Bösewicht Scar?",a:["Ein Löwe aus Der König der Löwen","Ein Roboter","Ein Zauberer","Ein Pirat"],c:0},
+{q:"Wie heißt der Cowboy aus Toy Story?",a:["Woody","Buzz","Andy","Rex"],c:0},
+{q:"Wie heißt der Astronaut aus Toy Story?",a:["Buzz Lightyear","Woody","Zurg","Rex"],c:0},
+{q:"Welche Filmreihe spielt in einer weit entfernten Galaxis?",a:["Star Wars","Toy Story","Shrek","Cars"],c:0},
+{q:"Wer trägt in Star Wars den Titel Darth Vader?",a:["Anakin Skywalker","Luke Skywalker","Han Solo","Obi-Wan Kenobi"],c:0},
+{q:"Wie heißt der Pirat aus Fluch der Karibik?",a:["Jack Sparrow","Will Turner","James Bond","Indiana Jones"],c:0},
+{q:"Wie heißt der Schneemann aus Die Eiskönigin?",a:["Olaf","Sven","Kristoff","Hans"],c:0},
+{q:"Wie heißt Elsas Schwester?",a:["Anna","Rapunzel","Moana","Jasmin"],c:0},
+{q:"Wie heißt der Superheld Bruce Wayne?",a:["Batman","Superman","Iron Man","Hulk"],c:0},
+{q:"Wer ist Clark Kent?",a:["Superman","Batman","Spider-Man","Thor"],c:0},
+{q:"Welche Figur gehört zu Marvel?",a:["Iron Man","Harry Potter","Frodo","James Bond"],c:0},
+{q:"Wie heißt der Archäologe aus der Indiana-Jones-Reihe?",a:["Indiana Jones","Jack Sparrow","James Bond","Sherlock Holmes"],c:0},
+{q:"Welche Figur ist ein Hobbit?",a:["Frodo Beutlin","Thor","Batman","Neo"],c:0},
+{q:"Wie heißt der Bösewicht in Der König der Löwen?",a:["Scar","Simba","Mufasa","Nala"],c:0}
+
+],
+
+musik: [
+
+{q:"Wie viele Saiten hat eine normale Gitarre?",a:["4","5","6","7"],c:2},
+{q:"Wie viele Tasten besitzt ein Standard-Klavier?",a:["66","76","88","96"],c:2},
+{q:"Wer komponierte die 9. Sinfonie?",a:["Beethoven","Mozart","Bach","Vivaldi"],c:0},
+{q:"Wer komponierte Eine kleine Nachtmusik?",a:["Mozart","Beethoven","Bach","Chopin"],c:0},
+{q:"Welches Instrument besitzt normalerweise vier Saiten und wird mit einem Bogen gespielt?",a:["Violine","Trompete","Flöte","Klavier"],c:0},
+{q:"Was bedeutet 'piano' in der Musik?",a:["Leise","Laut","Schnell","Langsam"],c:0},
+{q:"Was bedeutet 'forte'?",a:["Laut","Leise","Schnell","Langsam"],c:0},
+{q:"Wie nennt man ein Stück für zwei Musiker?",a:["Duett","Solo","Quartett","Chor"],c:0},
+{q:"Wie nennt man einen einzelnen musikalischen Vortrag?",a:["Solo","Duett","Trio","Quartett"],c:0},
+{q:"Welche Instrumentenfamilie gehört die Trompete an?",a:["Blechbläser","Streicher","Holzbläser","Schlagzeug"],c:0},
+{q:"Welche Instrumentenfamilie gehört die Geige an?",a:["Streicher","Blechbläser","Holzbläser","Schlagzeug"],c:0},
+{q:"Welche Instrumentenfamilie gehört die Flöte an?",a:["Holzbläser","Streicher","Blechbläser","Schlagzeug"],c:0},
+{q:"Wie nennt man die Geschwindigkeit eines Musikstücks?",a:["Tempo","Dynamik","Tonart","Takt"],c:0},
+{q:"Wie nennt man die Lautstärke in der Musik?",a:["Dynamik","Tempo","Tonhöhe","Takt"],c:0},
+{q:"Was ist ein Orchester?",a:["Größere Gruppe von Musikern","Ein einzelner Musiker","Ein Instrument","Ein Musikstück"],c:0},
+{q:"Was ist ein Chor?",a:["Gruppe von Sängern","Gruppe von Gitarren","Ein Schlagzeug","Ein Solo"],c:0},
+{q:"Welches Instrument gehört zum Schlagzeug?",a:["Trommel","Violine","Trompete","Flöte"],c:0},
+{q:"Wie viele Viertelnoten ergeben normalerweise einen 4/4-Takt?",a:["2","3","4","8"],c:2},
+{q:"Welcher Begriff bezeichnet die Tonhöhe?",a:["Pitch","Tempo","Dynamik","Rhythmus"],c:0},
+{q:"Welches Instrument hat schwarze und weiße Tasten?",a:["Klavier","Geige","Trompete","Schlagzeug"],c:0}
+
+],
+
+technik: [
+
+{q:"Wofür steht CPU?",a:["Central Processing Unit","Computer Power Unit","Central Program Utility","Control Processing Unit"],c:0},
+{q:"Wofür steht RAM?",a:["Random Access Memory","Read Access Machine","Rapid Application Memory","Random Application Module"],c:0},
+{q:"Was ist eine SSD?",a:["Datenspeicher","Prozessor","Grafikkarte","Netzteil"],c:0},
+{q:"Was ist HTML?",a:["Auszeichnungssprache für Webseiten","Programmiersprache für CPUs","Betriebssystem","Datenbank"],c:0},
+{q:"Wofür steht HTTP?",a:["Hypertext Transfer Protocol","High Transfer Text Program","Hyperlink Text Protocol","Host Transfer Program"],c:0},
+{q:"Welche Zahlensymbole verwendet das Binärsystem?",a:["0 und 1","1 und 2","0 bis 9","2 bis 8"],c:0},
+{q:"Was ist ein Router?",a:["Netzwerkgerät zur Weiterleitung von Daten","Monitor","Prozessor","Drucker"],c:0},
+{q:"Was ist eine IP-Adresse?",a:["Adresse eines Geräts in einem Netzwerk","Passwort","Dateiendung","Prozessor"],c:0},
+{q:"Was ist DNS?",a:["System zur Auflösung von Domainnamen","Grafikkarte","Betriebssystem","Dateiformat"],c:0},
+{q:"Was ist ein Browser?",a:["Programm zum Aufrufen von Webseiten","Betriebssystem","Prozessor","Router"],c:0},
+{q:"Welche Software ist ein Betriebssystem?",a:["Windows","Chrome","Discord","YouTube"],c:0},
+{q:"Was ist Bluetooth?",a:["Funktechnik für kurze Entfernungen","Kabel","Betriebssystem","Speicher"],c:0},
+{q:"Was ist WLAN?",a:["Wireless Local Area Network","Wide Local Access Node","Web Local Application Network","Wireless Login Number"],c:0},
+{q:"Welche Komponente übernimmt hauptsächlich Grafikberechnungen?",a:["GPU","CPU","RAM","SSD"],c:0},
+{q:"Was macht ein Netzteil?",a:["Versorgt Computerkomponenten mit Strom","Speichert Dateien","Zeigt Bilder an","Verbindet WLAN"],c:0},
+{q:"Was ist ein Betriebssystem?",a:["Grundlegende Software zur Verwaltung eines Computers","Ein Browser","Eine Webseite","Ein Kabel"],c:0},
+{q:"Was ist Cloud-Speicher?",a:["Speicher auf entfernten Servern","Ein USB-Kabel","Lokaler RAM","Eine Grafikkarte"],c:0},
+{q:"Was bedeutet USB?",a:["Universal Serial Bus","Universal System Browser","User Serial Base","Ultra Speed Band"],c:0},
+{q:"Was ist eine Programmiersprache?",a:["Sprache zum Erstellen von Software","Ein Computerkabel","Ein Prozessor","Ein Browser"],c:0},
+{q:"Welche Dateiendung wird häufig für JavaScript verwendet?",a:[".js",".java",".htmls",".script"],c:0}
+
+]
+
+};
+
+
+/* =====================================================
+   SPIELVARIABLEN
+===================================================== */
+
+let selectedTopic = "allgemein";
+let selectedQuestionCount = 5;
+
+let quizQuestions = [];
+let currentQuestion = 0;
+let score = 0;
+
+let currentPlayerName = "";
+let lobbyPlayers = [];
+
+let answerLocked = false;
+
+const ADMIN_PASSWORD = "QuizAdmin2026";
+
+
+/* =====================================================
+   SEITEN
+===================================================== */
+
+function hideAll() {
+
+    document
+        .querySelectorAll(".card")
+        .forEach(card => {
+            card.classList.add("hidden");
+        });
+}
+
+
+function showHome() {
+
+    hideAll();
+
+    document
+        .getElementById("home")
+        .classList
+        .remove("hidden");
+}
+
+
+function showCreateLobby() {
+
+    hideAll();
+
+    document
+        .getElementById("createLobby")
+        .classList
+        .remove("hidden");
+}
+
+
+function showJoinLobby() {
+
+    hideAll();
+
+    document
+        .getElementById("joinLobby")
+        .classList
+        .remove("hidden");
+}
+
+
+/* =====================================================
+   LOBBY ERSTELLEN
+===================================================== */
+
+function createLobby() {
+
+    const name =
+        document
+        .getElementById("hostName")
+        .value
+        .trim();
+
+
+    if (!name) {
+
+        alert("Bitte gib deinen Namen ein.");
+
+        return;
+    }
+
+
+    currentPlayerName = name;
+
+
+    selectedTopic =
+        document
+        .getElementById("createTopic")
+        .value;
+
+
+    selectedQuestionCount =
+        Number(
+            document
+            .getElementById("questionAmount")
+            .value
+        );
+
+
+    const code =
+        Math.random()
+        .toString(36)
+        .substring(2, 7)
+        .toUpperCase();
+
+
+    document
+        .getElementById("lobbyCode")
+        .textContent = code;
+
+
+    lobbyPlayers = [
+
+        {
+            name: currentPlayerName,
+            score: 0,
+            finished: false
+        }
+
+    ];
+
+
+    updatePlayers();
+
+
+    hideAll();
+
+
+    document
+        .getElementById("lobby")
+        .classList
+        .remove("hidden");
+}
+
+
+/* =====================================================
+   TESTSPIELER
+===================================================== */
+
+function addDemoPlayer() {
+
+    if (lobbyPlayers.length >= 3) {
+
+        alert(
+            "Für den Test sind maximal 3 Spieler möglich."
+        );
+
+        return;
+    }
+
+
+    const number =
+        lobbyPlayers.length + 1;
+
+
+    lobbyPlayers.push({
+
+        name: "Spieler " + number,
+
+        score: 0,
+
+        finished: false
+
+    });
+
+
+    updatePlayers();
+}
+
+
+/* =====================================================
+   SPIELER ANZEIGEN
+===================================================== */
+
+function updatePlayers() {
+
+    const container =
+        document.getElementById("players");
+
+
+    container.innerHTML = "";
+
+
+    lobbyPlayers.forEach(
+        (player, index) => {
+
+            const div =
+                document.createElement("div");
+
+
+            div.className = "player";
+
+
+            div.textContent =
+                (index === 0
+                    ? "👑 "
+                    : "👤 ")
+                + player.name;
+
+
+            container.appendChild(div);
+
+        }
+    );
+}
+
+
+/* =====================================================
+   LOBBY BEITRETEN
+===================================================== */
+
+function joinLobby() {
+
+    const name =
+        document
+        .getElementById("joinName")
+        .value
+        .trim();
+
+
+    const code =
+        document
+        .getElementById("joinCode")
+        .value
+        .trim();
+
+
+    if (!name || !code) {
+
+        alert(
+            "Bitte Name und Lobby-Code eingeben."
+        );
+
+        return;
+    }
+
+
+    alert(
+        "Die echte Online-Lobby kommt als nächster Schritt."
+    );
+}
+
+
+/* =====================================================
+   QUIZ STARTEN
+===================================================== */
+
+function startLobbyQuiz() {
+
+    startQuiz();
+}
+
+
+function startQuiz() {
+
+    const pool =
+        questionDatabase[selectedTopic];
+
+
+    if (
+        !pool ||
+        pool.length < selectedQuestionCount
+    ) {
+
+        alert(
+            "Für dieses Thema gibt es nicht genügend Fragen."
+        );
+
+        return;
+    }
+
+
+    quizQuestions =
+        [...pool]
+        .sort(() => Math.random() - 0.5)
+        .slice(
+            0,
+            selectedQuestionCount
+        );
+
+
+    currentQuestion = 0;
+
+    score = 0;
+
+    answerLocked = false;
+
+
+    lobbyPlayers.forEach(
+        player => {
+
+            player.score = 0;
+            player.finished = false;
+
+        }
+    );
+
+
+    document
+        .getElementById("score")
+        .textContent = "0";
+
+
+    hideAll();
+
+
+    document
+        .getElementById("quiz")
+        .classList
+        .remove("hidden");
+
+
+    showQuestion();
+}
+
+
+/* =====================================================
+   FRAGE
+===================================================== */
+
+function showQuestion() {
+
+    answerLocked = false;
+
+
+    const question =
+        quizQuestions[currentQuestion];
+
+
+    document
+        .getElementById("questionNumber")
+        .textContent =
+        "Frage "
+        + (currentQuestion + 1)
+        + " von "
+        + quizQuestions.length;
+
+
+    document
+        .getElementById("questionText")
+        .textContent =
+        question.q;
+
+
+    document
+        .getElementById("progressBar")
+        .style.width =
+        (
+            (currentQuestion /
+                quizQuestions.length) * 100
+        ) + "%";
+
+
+    const answers =
+        question.a.map(
+            (text, index) => ({
+
+                text: text,
+
+                correct:
+                    index === question.c
+
+            })
+        );
+
+
+    answers.sort(
+        () => Math.random() - 0.5
+    );
+
+
+    const container =
+        document.getElementById("answers");
+
+
+    container.innerHTML = "";
+
+
+    answers.forEach(
+        answer => {
+
+            const button =
+                document.createElement("button");
+
+
+            button.className =
+                "answer";
+
+
+            button.textContent =
+                answer.text;
+
+
+            button.onclick =
+                () => {
+
+                    answerQuestion(
+                        answer.correct,
+                        button
+                    );
+
+                };
+
+
+            container.appendChild(button);
+
+        }
+    );
+}
+
+
+/* =====================================================
+   ANTWORT
+===================================================== */
+
+function answerQuestion(
+    correct,
+    clickedButton
+) {
+
+    if (answerLocked) {
+        return;
+    }
+
+
+    answerLocked = true;
+
+
+    const buttons =
+        document.querySelectorAll(".answer");
+
+
+    buttons.forEach(
+        button => {
+            button.disabled = true;
+        }
+    );
+
+
+    if (correct) {
+
+        clickedButton
+            .classList
+            .add("correct");
+
+
+        score += 100;
+
+    } else {
+
+        clickedButton
+            .classList
+            .add("wrong");
+    }
+
+
+    document
+        .getElementById("score")
+        .textContent = score;
+
+
+    setTimeout(
+        () => {
+
+            currentQuestion++;
+
+
+            if (
+                currentQuestion >=
+                quizQuestions.length
+            ) {
+
+                finishPlayer();
+
+            } else {
+
+                showQuestion();
+
+            }
+
+        },
+        700
+    );
+}
+
+
+/* =====================================================
+   SPIELER FERTIG
+===================================================== */
+
+function finishPlayer() {
+
+    lobbyPlayers[0].score =
+        score;
+
+
+    lobbyPlayers[0].finished =
+        true;
+
+
+    if (lobbyPlayers.length > 1) {
+
+        showWaiting();
+
+        simulateOtherPlayers();
+
+    } else {
+
+        showResults();
+
+    }
+}
+
+
+/* =====================================================
+   WARTEN
+===================================================== */
+
+function showWaiting() {
+
+    hideAll();
+
+    document
+        .getElementById("waiting")
+        .classList
+        .remove("hidden");
+
+    updateWaitingText();
+}
+
+
+function updateWaitingText() {
+
+    const finished =
+        lobbyPlayers.filter(
+            player => player.finished
+        ).length;
+
+
+    const total =
+        lobbyPlayers.length;
+
+
+    document
+        .getElementById("waitingPlayers")
+        .textContent =
+        finished
+        + " von "
+        + total
+        + " Spielern sind fertig.";
+}
+
+
+/* =====================================================
+   TESTSPIELER SIMULIEREN
+===================================================== */
+
+function simulateOtherPlayers() {
+
+    lobbyPlayers.forEach(
+        (player, index) => {
+
+            if (index === 0) {
+                return;
+            }
+
+
+            setTimeout(
+                () => {
+
+                    player.score =
+                        Math.floor(
+                            Math.random() *
+                            (
+                                selectedQuestionCount *
+                                100 + 1
+                            )
+                        );
+
+
+                    player.finished =
+                        true;
+
+
+                    updateWaitingText();
+
+
+                    checkEveryoneFinished();
+
+                },
+                2500 + index * 1500
+            );
+
+        }
+    );
+}
+
+
+function checkEveryoneFinished() {
+
+    const everyoneFinished =
+        lobbyPlayers.every(
+            player => player.finished
+        );
+
+
+    if (everyoneFinished) {
+
+        setTimeout(
+            () => {
+                showResults();
+            },
+            700
+        );
+
+    }
+}
+
+
+/* =====================================================
+   ERGEBNIS
+===================================================== */
+
+function showResults() {
+
+    hideAll();
+
+
+    const results =
+        [...lobbyPlayers]
+        .sort(
+            (a, b) =>
+                b.score - a.score
+        );
+
+
+    results.forEach(
+        (player, index) => {
+
+            player.place =
+                index + 1;
+
+        }
+    );
+
+
+    /*
+       Ergebnis-Reihenfolge zufällig mischen.
+       Die Platznummer bleibt trotzdem korrekt.
+    */
+
+    const visualResults =
+        [...results]
+        .sort(
+            () => Math.random() - 0.5
+        );
+
+
+    const container =
+        document.getElementById(
+            "finalResults"
+        );
+
+
+    container.innerHTML = "";
+
+
+    visualResults.forEach(
+        player => {
+
+            const div =
+                document.createElement("div");
+
+
+            div.className = "place";
+
+
+            if (player.place === 1) {
+                div.classList.add("gold");
+            }
+
+            if (player.place === 2) {
+                div.classList.add("silver");
+            }
+
+            if (player.place === 3) {
+                div.classList.add("bronze");
+            }
+
+
+            let medal = "";
+
+
+            if (player.place === 1) {
+                medal = "🥇";
+            }
+
+            if (player.place === 2) {
+                medal = "🥈";
+            }
+
+            if (player.place === 3) {
+                medal = "🥉";
+            }
+
+
+            div.innerHTML =
+                medal
+                + " <strong>Platz "
+                + player.place
+                + "</strong><br>"
+                + escapeHTML(player.name)
+                + "<br>"
+                + "<strong>"
+                + player.score
+                + " Punkte"
+                + "</strong>";
+
+
+            container.appendChild(div);
+
+        }
+    );
+
+
+    document
+        .getElementById("resultScreen")
+        .classList
+        .remove("hidden");
+
+
+    saveResults(results);
+}
+
+
+/* =====================================================
+   BESTENLISTE SPEICHERN
+===================================================== */
+
+function saveResults(results) {
+
+    let leaderboard =
+        JSON.parse(
+            localStorage.getItem(
+                "quizLeaderboard"
+            ) || "[]"
+        );
+
+
+    results.forEach(
+        player => {
+
+            leaderboard.push({
+
+                name:
+                    player.name,
+
+                score:
+                    Number(player.score),
+
+                topic:
+                    selectedTopic,
+
+                date:
+                    new Date().toISOString()
+
+            });
+
+        }
+    );
+
+
+    leaderboard.sort(
+        (a, b) => {
+
+            if (
+                b.score !== a.score
+            ) {
+
+                return b.score - a.score;
+
+            }
+
+
+            return new Date(a.date)
+                - new Date(b.date);
+
+        }
+    );
+
+
+    leaderboard =
+        leaderboard.slice(0, 100);
+
+
+    localStorage.setItem(
+        "quizLeaderboard",
+        JSON.stringify(leaderboard)
+    );
+}
+
+
+/* =====================================================
+   BESTENLISTE
+===================================================== */
+
+function showLeaderboard() {
+
+    hideAll();
+
+
+    const container =
+        document.getElementById(
+            "leaderboardList"
+        );
+
+
+    const leaderboard =
+        JSON.parse(
+            localStorage.getItem(
+                "quizLeaderboard"
+            ) || "[]"
+        );
+
+
+    container.innerHTML = "";
+
+
+    if (
+        leaderboard.length === 0
+    ) {
+
+        container.innerHTML =
+            "<p>Noch keine Ergebnisse.</p>";
+
+    } else {
+
+        leaderboard.forEach(
+            (player, index) => {
+
+                const div =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                div.className =
+                    "player";
+
+
+                let medal = "";
+
+
+                if (index === 0) {
+                    medal = "🥇 ";
+                }
+
+                if (index === 1) {
+                    medal = "🥈 ";
+                }
+
+                if (index === 2) {
+                    medal = "🥉 ";
+                }
+
+
+                const date =
+                    player.date
+                        ? new Date(
+                            player.date
+                        ).toLocaleString(
+                            "de-DE"
+                        )
+                        : "";
+
+
+                div.innerHTML =
+                    medal
+                    + "<strong>"
+                    + (index + 1)
+                    + ".</strong> "
+                    + escapeHTML(
+                        player.name
+                    )
+                    + " — "
+                    + player.score
+                    + " Punkte"
+                    + "<br>"
+                    + "<span class='small'>"
+                    + escapeHTML(
+                        player.topic ||
+                        "Unbekannt"
+                    )
+                    + " · "
+                    + date
+                    + "</span>";
+
+
+                container.appendChild(div);
+
+            }
+        );
+    }
+
+
+    document
+        .getElementById("leaderboard")
+        .classList
+        .remove("hidden");
+}
+
+
+/* =====================================================
+   ADMIN LOGIN
+===================================================== */
+
+function showAdminLogin() {
+
+    hideAll();
+
+
+    document
+        .getElementById("adminPassword")
+        .value = "";
+
+
+    document
+        .getElementById("adminLogin")
+        .classList
+        .remove("hidden");
+}
+
+
+function adminLogin() {
+
+    const password =
+        document
+        .getElementById("adminPassword")
+        .value;
+
+
+    if (
+        password !==
+        ADMIN_PASSWORD
+    ) {
+
+        alert(
+            "❌ Falsches Admin-Passwort."
+        );
+
+        return;
+    }
+
+
+    showAdminPanel();
+}
+
+
+/* =====================================================
+   ADMIN PANEL
+===================================================== */
+
+function showAdminPanel() {
+
+    hideAll();
+
+    updateAdminList();
+
+
+    document
+        .getElementById("adminPanel")
+        .classList
+        .remove("hidden");
+}
+
+
+/* =====================================================
+   ADMIN BESTENLISTE
+===================================================== */
+
+function updateAdminList() {
+
+    const container =
+        document.getElementById(
+            "adminLeaderboardList"
+        );
+
+
+    const leaderboard =
+        JSON.parse(
+            localStorage.getItem(
+                "quizLeaderboard"
+            ) || "[]"
+        );
+
+
+    container.innerHTML = "";
+
+
+    if (
+        leaderboard.length === 0
+    ) {
+
+        container.innerHTML =
+            "<p>Die Bestenliste ist leer.</p>";
+
+        return;
+    }
+
+
+    leaderboard.forEach(
+        (player, index) => {
+
+            const div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "player admin-entry";
+
+
+            const date =
+                player.date
+                    ? new Date(
+                        player.date
+                    ).toLocaleString(
+                        "de-DE"
+                    )
+                    : "Unbekannt";
+
+
+            div.innerHTML =
+                "<strong>"
+                + (index + 1)
+                + ". "
+                + escapeHTML(
+                    player.name
+                )
+                + "</strong>"
+                + "<br>"
+                + player.score
+                + " Punkte"
+                + "<br>"
+                + "<span class='small'>"
+                + "Thema: "
+                + escapeHTML(
+                    player.topic ||
+                    "Unbekannt"
+                )
+                + "<br>"
+                + date
+                + "</span>"
+                + "<button "
+                + "class='danger' "
+                + "onclick='deleteLeaderboardEntry("
+                + index
+                + ")'>"
+                + "❌ Eintrag löschen"
+                + "</button>";
+
+
+            container.appendChild(div);
+
+        }
+    );
+}
+
+
+/* =====================================================
+   EINZELNEN EINTRAG LÖSCHEN
+===================================================== */
+
+function deleteLeaderboardEntry(index) {
+
+    const confirmed =
+        confirm(
+            "Möchtest du diesen Eintrag wirklich löschen?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    let leaderboard =
+        JSON.parse(
+            localStorage.getItem(
+                "quizLeaderboard"
+            ) || "[]"
+        );
+
+
+    leaderboard.splice(
+        index,
+        1
+    );
+
+
+    localStorage.setItem(
+        "quizLeaderboard",
+        JSON.stringify(
+            leaderboard
+        )
+    );
+
+
+    updateAdminList();
+
+
+    alert(
+        "✅ Der Eintrag wurde gelöscht."
+    );
+}
+
+
+/* =====================================================
+   BESTENLISTE KOMPLETT ZURÜCKSETZEN
+===================================================== */
+
+function resetLeaderboard() {
+
+    const confirmed =
+        confirm(
+            "⚠️ ACHTUNG!\n\n"
+            + "Die komplette Bestenliste "
+            + "wird gelöscht.\n\n"
+            + "Möchtest du wirklich fortfahren?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    localStorage.removeItem(
+        "quizLeaderboard"
+    );
+
+
+    updateAdminList();
+
+
+    alert(
+        "✅ Die Bestenliste wurde zurückgesetzt."
+    );
+}
+
+
+/* =====================================================
+   ADMIN ABMELDEN
+===================================================== */
+
+function adminLogout() {
+
+    showHome();
+}
+
+
+/* =====================================================
+   SICHERE TEXTAUSGABE
+===================================================== */
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+/* =====================================================
+   START
+===================================================== */
+
+showHome();
+
+</script>
+
+</body>
+</html>
